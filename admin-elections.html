@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoteSecure - Manage Elections</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="dashboard-layout">
+    <aside class="sidebar" id="sidebar" role="navigation" aria-label="Admin navigation">
+      <div class="sidebar-header">
+        <div class="logo" aria-hidden="true">
+          <i class="fa-solid fa-check-to-slot"></i>
+          <span>VoteSecure <small>Admin Panel</small></span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <span class="nav-group-label">MAIN</span>
+            <a href="admin-dashboard.html" class="nav-link"><i class="fas fa-tachometer-alt" aria-hidden="true"></i> Dashboard</a>
+          </li>
+          <li>
+            <span class="nav-group-label">ELECTIONS</span>
+            <a href="admin-elections.html" class="nav-link active"><i class="fas fa-calendar-check" aria-hidden="true"></i> Manage Elections</a>
+            <a href="admin-candidates.html" class="nav-link"><i class="fas fa-users" aria-hidden="true"></i> Candidates</a>
+            <a href="admin-results.html" class="nav-link"><i class="fas fa-chart-bar" aria-hidden="true"></i> Results</a>
+          </li>
+          <li>
+            <span class="nav-group-label">VOTERS</span>
+            <a href="admin-voters.html" class="nav-link"><i class="fas fa-user-check" aria-hidden="true"></i> Voter Management</a>
+          </li>
+          <li>
+            <span class="nav-group-label">SYSTEM</span>
+            <a href="index.html" class="nav-link"><i class="fas fa-globe" aria-hidden="true"></i> Public Site</a>
+          </li>
+        </ul>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="admin-user-box">
+          <div class="admin-avatar" aria-hidden="true">S</div>
+          <div class="admin-info">
+            <span class="admin-name">System Administrator</span>
+            <span class="admin-role">Administrator</span>
+          </div>
+        </div>
+        <button class="btn btn-logout btn-full" id="logoutBtn"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Logout</button>
+      </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <div class="main-wrapper">
+      <header class="top-bar" role="banner">
+        <div class="top-bar-left">
+          <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="sidebar">
+            <i class="fas fa-bars" aria-hidden="true"></i>
+          </button>
+          <h1 class="page-title">Manage Elections</h1>
+        </div>
+        <div class="top-bar-right">
+          <button class="btn btn-auto" id="createElectionBtn"><i class="fas fa-plus" aria-hidden="true"></i><span class="btn-label"> Create Election</span></button>
+        </div>
+      </header>
+
+      <main class="main-content" role="main">
+        <section class="card-section" aria-labelledby="electionsHeading">
+          <div class="card-section-header">
+            <h2 class="section-title" id="electionsHeading"><i class="fas fa-box-check" aria-hidden="true"></i> Elections</h2>
+            <span class="election-count" id="electionCount">0 total</span>
+          </div>
+          <div class="table-container">
+            <table class="data-table" id="electionsTable">
+              <thead>
+                <tr>
+                  <th scope="col">Title</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Start Date</th>
+                  <th scope="col">End Date</th>
+                  <th scope="col">Candidates</th>
+                  <th scope="col">Votes</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <p class="empty-message" id="electionsEmpty" hidden>No elections found.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="createElectionModal" role="dialog" aria-modal="true" aria-labelledby="createElectionModalTitle" hidden>
+    <div class="modal">
+      <h2 id="createElectionModalTitle">Create Election</h2>
+      <form id="createElectionForm" novalidate>
+        <div class="form-group">
+          <label for="electionTitle" class="required">Title</label>
+          <div class="input-wrapper">
+            <i class="fas fa-box-check" aria-hidden="true"></i>
+            <input type="text" id="electionTitle" name="title" placeholder="Enter election title" required>
+          </div>
+          <div class="error-message" aria-live="polite"></div>
+        </div>
+        <div class="form-group">
+          <label for="electionDescription">Description</label>
+          <div class="input-wrapper">
+            <i class="fas fa-align-left" aria-hidden="true"></i>
+            <textarea id="electionDescription" name="description" placeholder="Enter election description (optional)" rows="3"></textarea>
+          </div>
+          <div class="error-message" aria-live="polite"></div>
+        </div>
+        <div class="form-group">
+          <label for="electionStartDate" class="required">Start Date</label>
+          <div class="input-wrapper">
+            <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+            <input type="date" id="electionStartDate" name="startDate" required>
+          </div>
+          <div class="error-message" aria-live="polite"></div>
+        </div>
+        <div class="form-group">
+          <label for="electionEndDate" class="required">End Date</label>
+          <div class="input-wrapper">
+            <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+            <input type="date" id="electionEndDate" name="endDate" required>
+          </div>
+          <div class="error-message" aria-live="polite"></div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" id="createElectionCancel">Cancel</button>
+          <button type="submit" class="btn" id="createElectionSubmit"><i class="fas fa-plus" aria-hidden="true"></i> Create Election</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="confirmActionModal" role="dialog" aria-modal="true" aria-labelledby="confirmActionModalTitle" hidden>
+    <div class="modal">
+      <h2 id="confirmActionModalTitle">Confirm Action</h2>
+      <p id="confirmActionMessage"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" id="confirmActionCancel">Cancel</button>
+        <button type="button" class="btn" id="confirmActionConfirm"></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <script src="js/data.js"></script>
+  <script>
+    const AdminElections = {
+      electionToAction: null,
+      actionType: null,
+
+      init() {
+        this.checkAuth();
+        this.initSidebar();
+        this.initLogout();
+        this.initModals();
+        this.renderElectionsTable();
+      },
+
+      checkAuth() {
+        const isAdmin = sessionStorage.getItem('isAdmin');
+        if (!isAdmin) {
+          window.location.href = 'admin-login.html';
+        }
+      },
+
+      initSidebar() {
+        const hamburger = document.getElementById('hamburger');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        hamburger?.addEventListener('click', () => {
+          const isOpen = sidebar.classList.toggle('open');
+          hamburger.setAttribute('aria-expanded', isOpen);
+          overlay.classList.toggle('visible');
+        });
+
+        overlay?.addEventListener('click', () => {
+          sidebar.classList.remove('open');
+          hamburger.setAttribute('aria-expanded', 'false');
+          overlay.classList.remove('visible');
+        });
+      },
+
+      initLogout() {
+        const logoutBtn = document.getElementById('logoutBtn');
+        logoutBtn?.addEventListener('click', () => {
+          sessionStorage.removeItem('adminUser');
+          sessionStorage.removeItem('isAdmin');
+          window.location.href = 'admin-login.html';
+        });
+      },
+
+      initModals() {
+        const createBtn = document.getElementById('createElectionBtn');
+        const createModal = document.getElementById('createElectionModal');
+        const confirmModal = document.getElementById('confirmActionModal');
+        const createForm = document.getElementById('createElectionForm');
+        const createCancel = document.getElementById('createElectionCancel');
+        const confirmCancel = document.getElementById('confirmActionCancel');
+        const confirmConfirm = document.getElementById('confirmActionConfirm');
+
+        createBtn?.addEventListener('click', () => this.openCreateModal());
+        createCancel?.addEventListener('click', () => this.closeCreateModal());
+        confirmCancel?.addEventListener('click', () => this.closeConfirmModal());
+
+        createModal?.addEventListener('click', (e) => {
+          if (e.target === createModal) this.closeCreateModal();
+        });
+        confirmModal?.addEventListener('click', (e) => {
+          if (e.target === confirmModal) this.closeConfirmModal();
+        });
+
+        createForm?.addEventListener('submit', (e) => this.handleCreateElection(e));
+        confirmConfirm?.addEventListener('click', () => this.confirmAction());
+
+        createForm?.querySelectorAll('input[required], textarea[required]').forEach(input => {
+          input.addEventListener('blur', () => this.validateField(input));
+          input.addEventListener('input', () => this.clearError(input));
+        });
+      },
+
+      openCreateModal() {
+        const modal = document.getElementById('createElectionModal');
+        const form = document.getElementById('createElectionForm');
+        const today = new Date().toISOString().split('T')[0];
+        const startInput = document.getElementById('electionStartDate');
+        const endInput = document.getElementById('electionEndDate');
+        startInput.min = today;
+        endInput.min = today;
+        form.reset();
+        this.clearAllErrors(form);
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => document.getElementById('electionTitle')?.focus(), 100);
+      },
+
+      closeCreateModal() {
+        const modal = document.getElementById('createElectionModal');
+        modal.hidden = true;
+        document.body.style.overflow = '';
+      },
+
+      openConfirmModal(election, type) {
+        this.electionToAction = election;
+        this.actionType = type;
+        const modal = document.getElementById('confirmActionModal');
+        const message = document.getElementById('confirmActionMessage');
+        const confirmBtn = document.getElementById('confirmActionConfirm');
+
+        if (type === 'start') {
+          message.textContent = `Start "${election.title}"? Voters will be able to vote.`;
+          confirmBtn.innerHTML = '<i class="fas fa-play" aria-hidden="true"></i> Start';
+          confirmBtn.style.background = 'var(--success)';
+          confirmBtn.style.borderColor = 'var(--success)';
+        } else if (type === 'end') {
+          message.textContent = `End "${election.title}"? Voting will close and results will be final.`;
+          confirmBtn.innerHTML = '<i class="fas fa-stop" aria-hidden="true"></i> End Election';
+          confirmBtn.style.background = '#f39c12';
+          confirmBtn.style.borderColor = '#f39c12';
+        } else if (type === 'delete') {
+          message.textContent = `Delete "${election.title}"? This will also remove all its candidates. This cannot be undone.`;
+          confirmBtn.innerHTML = '<i class="fas fa-trash" aria-hidden="true"></i> Delete';
+          confirmBtn.style.background = 'var(--error)';
+          confirmBtn.style.borderColor = 'var(--error)';
+        }
+
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+      },
+
+      closeConfirmModal() {
+        const modal = document.getElementById('confirmActionModal');
+        this.electionToAction = null;
+        this.actionType = null;
+        modal.hidden = true;
+        document.body.style.overflow = '';
+      },
+
+      getRequiredMessage(input) {
+        const messages = {
+          electionTitle: 'Title is required',
+          electionStartDate: 'Start date is required',
+          electionEndDate: 'End date is required'
+        };
+        return messages[input.id] || 'This field is required';
+      },
+
+      validateField(input) {
+        if (input.required && !input.value.trim()) {
+          this.setError(input, this.getRequiredMessage(input));
+          return false;
+        }
+        if (input.id === 'electionEndDate' && input.value) {
+          const startDate = document.getElementById('electionStartDate').value;
+          if (startDate && input.value < startDate) {
+            this.setError(input, 'End date cannot be before the start date');
+            return false;
+          }
+        }
+        this.setSuccess(input);
+        return true;
+      },
+
+      setError(input, message) {
+        input.classList.remove('success');
+        input.classList.add('error');
+        const errorEl = input.closest('.form-group')?.querySelector('.error-message');
+        if (errorEl) {
+          errorEl.textContent = message;
+          errorEl.classList.add('visible');
+        }
+      },
+
+      setSuccess(input) {
+        input.classList.remove('error');
+        input.classList.add('success');
+        const errorEl = input.closest('.form-group')?.querySelector('.error-message');
+        if (errorEl) {
+          errorEl.classList.remove('visible');
+        }
+      },
+
+      clearError(input) {
+        input.classList.remove('error');
+        const errorEl = input.closest('.form-group')?.querySelector('.error-message');
+        if (errorEl) {
+          errorEl.classList.remove('visible');
+        }
+      },
+
+      clearAllErrors(form) {
+        form.querySelectorAll('.error, .success').forEach(el => el.classList.remove('error', 'success'));
+        form.querySelectorAll('.error-message').forEach(el => el.classList.remove('visible'));
+      },
+
+      handleCreateElection(e) {
+        e.preventDefault();
+        const form = e.target;
+        const fields = {
+          title: form.querySelector('#electionTitle'),
+          startDate: form.querySelector('#electionStartDate'),
+          endDate: form.querySelector('#electionEndDate')
+        };
+        const title = fields.title.value.trim();
+        const description = form.querySelector('#electionDescription').value.trim();
+        const startDate = fields.startDate.value;
+        const endDate = fields.endDate.value;
+
+        const invalidFields = [];
+        if (!title) {
+          this.setError(fields.title, 'Title is required');
+          invalidFields.push(fields.title);
+        }
+        if (!startDate) {
+          this.setError(fields.startDate, 'Start date is required');
+          invalidFields.push(fields.startDate);
+        }
+        if (!endDate) {
+          this.setError(fields.endDate, 'End date is required');
+          invalidFields.push(fields.endDate);
+        } else if (startDate && endDate < startDate) {
+          this.setError(fields.endDate, 'End date cannot be before the start date');
+          invalidFields.push(fields.endDate);
+        }
+
+        if (invalidFields.length) {
+          invalidFields[0].focus();
+          return;
+        }
+
+        const result = DataStore.addElection({ title, description, startDate, endDate });
+        if (result.success) {
+          this.closeCreateModal();
+          this.showToast('Election created successfully', 'success');
+          this.renderElectionsTable();
+        } else {
+          this.showToast(result.message || 'Failed to create election', 'error');
+        }
+      },
+
+      confirmAction() {
+        if (!this.electionToAction || !this.actionType) return;
+        const election = this.electionToAction;
+        const type = this.actionType;
+        let result;
+
+        if (type === 'start') {
+          result = DataStore.updateElectionStatus(election.id, 'ongoing');
+        } else if (type === 'end') {
+          result = DataStore.updateElectionStatus(election.id, 'completed');
+        } else if (type === 'delete') {
+          result = DataStore.removeElection(election.id);
+        }
+
+        if (result?.success) {
+          this.closeConfirmModal();
+          const messages = {
+            start: 'Election started successfully',
+            end: 'Election ended successfully',
+            delete: 'Election deleted successfully'
+          };
+          this.showToast(messages[type], 'success');
+          this.renderElectionsTable();
+        } else {
+          this.showToast(result?.message || 'Action failed', 'error');
+        }
+      },
+
+      renderElectionsTable() {
+        const elections = DataStore.getElections();
+        const tbody = document.querySelector('#electionsTable tbody');
+        const empty = document.getElementById('electionsEmpty');
+        const countEl = document.getElementById('electionCount');
+
+        countEl.textContent = `${elections.length} total`;
+
+        if (!elections.length) {
+          tbody.innerHTML = '';
+          empty.hidden = false;
+          return;
+        }
+
+        empty.hidden = true;
+        tbody.innerHTML = elections.map(election => {
+          const candidates = DataStore.getCandidatesByElection(election.id);
+          const candidateCount = candidates.length;
+          const totalVotes = candidates.reduce((sum, c) => sum + c.votes, 0);
+          const startDate = new Date(election.startDate).toLocaleDateString('en-US', {
+            year: 'numeric', month: 'short', day: 'numeric'
+          });
+          const endDate = new Date(election.endDate).toLocaleDateString('en-US', {
+            year: 'numeric', month: 'short', day: 'numeric'
+          });
+
+          let statusBadge = '';
+          let statusClass = '';
+          if (election.status === 'ongoing') {
+            statusBadge = 'ONGOING';
+            statusClass = 'badge-ongoing';
+          } else if (election.status === 'completed') {
+            statusBadge = 'COMPLETED';
+            statusClass = 'badge-completed';
+          } else {
+            statusBadge = 'UPCOMING';
+            statusClass = 'badge-upcoming';
+          }
+
+          let actionsHtml = '';
+          if (election.status === 'upcoming') {
+            actionsHtml += `
+              <button class="btn btn-sm" data-action="start" data-election-id="${election.id}" style="background: var(--success); border-color: var(--success);">
+                <i class="fas fa-play" aria-hidden="true"></i> Start
+              </button>
+            `;
+          } else if (election.status === 'ongoing') {
+            actionsHtml += `
+              <button class="btn btn-sm" data-action="end" data-election-id="${election.id}" style="background: #f39c12; border-color: #f39c12;">
+                <i class="fas fa-stop" aria-hidden="true"></i> End
+              </button>
+            `;
+          }
+          if (election.status === 'ongoing' || election.status === 'completed') {
+            actionsHtml += `
+              <a href="admin-results.html?election=${election.id}" class="btn btn-sm btn-outline">
+                <i class="fas fa-chart-bar" aria-hidden="true"></i> Results
+              </a>
+            `;
+          }
+          actionsHtml += `
+            <button class="btn btn-sm btn-delete" data-action="delete" data-election-id="${election.id}" style="background: transparent; border: 1px solid var(--error); color: var(--error);">
+              <i class="fas fa-trash" aria-hidden="true"></i> Delete
+            </button>
+          `;
+
+          return `
+            <tr>
+              <td>
+                <div class="election-title-cell">
+                  <strong>${this.escapeHtml(election.title)}</strong>
+                  ${election.description ? `<div class="election-description-cell">${this.escapeHtml(election.description)}</div>` : ''}
+                </div>
+              </td>
+              <td><span class="badge ${statusClass}">${statusBadge}</span></td>
+              <td>${startDate}</td>
+              <td>${endDate}</td>
+              <td>${candidateCount}</td>
+              <td class="votes-cell">${totalVotes.toLocaleString()}</td>
+              <td>
+                <div class="action-buttons">${actionsHtml}</div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        tbody.querySelectorAll('[data-action]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const electionId = btn.dataset.electionId;
+            const action = btn.dataset.action;
+            const election = elections.find(e => e.id === electionId);
+            if (election && action !== 'results') {
+              this.openConfirmModal(election, action);
+            }
+          });
+        });
+      },
+
+      showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+          toast.classList.remove('show');
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      },
+
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => AdminElections.init());
+  </script>
+  <style>
+    .election-count {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .election-title-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .election-description-cell {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      max-width: 300px;
+    }
+
+    .data-table td.votes-cell {
+      color: var(--gold);
+      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .btn-delete:hover {
+      background: var(--error) !important;
+      color: var(--text-primary) !important;
+    }
+
+    .badge-ongoing {
+      background: rgba(46, 204, 113, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .badge-completed {
+      background: rgba(201, 168, 76, 0.15);
+      color: var(--gold);
+      border: 1px solid rgba(201, 168, 76, 0.3);
+    }
+
+    .badge-upcoming {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+      transition: opacity var(--transition), visibility var(--transition);
+    }
+
+    .modal-overlay:not([hidden]) {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      width: 100%;
+      max-width: 480px;
+      margin: auto;
+      box-shadow: var(--shadow-hover);
+      transform: scale(0.95);
+      transition: transform var(--transition);
+      max-height: 90vh;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--card-border) transparent;
+    }
+
+    .modal-overlay:not([hidden]) .modal {
+      transform: scale(1);
+    }
+
+    .modal h2 {
+      font-size: 1.35rem;
+      text-align: center;
+      margin: 0 0 1.5rem;
+      padding: 0.25rem 0 0;
+    }
+
+    .modal::-webkit-scrollbar,
+    .modal-overlay::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .modal::-webkit-scrollbar-track,
+    .modal-overlay::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .modal::-webkit-scrollbar-thumb {
+      background: var(--card-border);
+      border-radius: 8px;
+    }
+
+    .modal::-webkit-scrollbar-thumb:hover {
+      background: var(--gold);
+    }
+
+    .modal-overlay::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+    }
+
+    .modal p {
+      color: var(--text-secondary);
+      text-align: center;
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .modal-actions .btn {
+      flex: 1;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+    }
+
+    .btn-outline:hover {
+      background: var(--gold);
+      color: var(--bg-dark);
+    }
+
+    @media (max-width: 768px) {
+      #electionsTable {
+        min-width: 760px;
+      }
+
+      #electionsTable th:first-child,
+      #electionsTable td:first-child {
+        min-width: 200px;
+        white-space: normal;
+      }
+
+      #electionsTable th:not(:first-child),
+      #electionsTable td:not(:first-child) {
+        white-space: nowrap;
+      }
+
+      .election-description-cell {
+        max-width: 200px;
+      }
+
+      .action-buttons {
+        flex-wrap: nowrap;
+      }
+
+      .modal {
+        padding: 1.5rem;
+        max-height: 92vh;
+      }
+
+      .modal-actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</body>
+</html>

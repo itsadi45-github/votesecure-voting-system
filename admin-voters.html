@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoteSecure - Voter Management</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="dashboard-layout">
+    <aside class="sidebar" id="sidebar" role="navigation" aria-label="Admin navigation">
+      <div class="sidebar-header">
+        <div class="logo" aria-hidden="true">
+          <i class="fa-solid fa-check-to-slot"></i>
+          <span>VoteSecure <small>Admin Panel</small></span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <span class="nav-group-label">MAIN</span>
+            <a href="admin-dashboard.html" class="nav-link"><i class="fas fa-tachometer-alt" aria-hidden="true"></i> Dashboard</a>
+          </li>
+          <li>
+            <span class="nav-group-label">ELECTIONS</span>
+            <a href="admin-elections.html" class="nav-link"><i class="fas fa-calendar-check" aria-hidden="true"></i> Manage Elections</a>
+            <a href="admin-candidates.html" class="nav-link"><i class="fas fa-users" aria-hidden="true"></i> Candidates</a>
+            <a href="admin-results.html" class="nav-link"><i class="fas fa-chart-bar" aria-hidden="true"></i> Results</a>
+          </li>
+          <li>
+            <span class="nav-group-label">VOTERS</span>
+            <a href="admin-voters.html" class="nav-link active"><i class="fas fa-user-check" aria-hidden="true"></i> Voter Management</a>
+          </li>
+          <li>
+            <span class="nav-group-label">SYSTEM</span>
+            <a href="index.html" class="nav-link"><i class="fas fa-globe" aria-hidden="true"></i> Public Site</a>
+          </li>
+        </ul>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="admin-user-box">
+          <div class="admin-avatar" aria-hidden="true">S</div>
+          <div class="admin-info">
+            <span class="admin-name">System Administrator</span>
+            <span class="admin-role">Administrator</span>
+          </div>
+        </div>
+        <button class="btn btn-logout btn-full" id="logoutBtn"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Logout</button>
+      </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <div class="main-wrapper">
+      <header class="top-bar" role="banner">
+        <div class="top-bar-left">
+          <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="sidebar">
+            <i class="fas fa-bars" aria-hidden="true"></i>
+          </button>
+          <h1 class="page-title">Voter Management</h1>
+        </div>
+        <div class="top-bar-right">
+          <button class="btn btn-auto" id="addVoterBtn"><i class="fas fa-plus" aria-hidden="true"></i><span class="btn-label"> Add Voter</span></button>
+        </div>
+      </header>
+
+      <main class="main-content" role="main">
+        <div class="filter-bar" aria-label="Filter voters by status">
+          <span class="filter-label">Filter by status:</span>
+          <div class="filter-buttons" id="filterButtons">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="verified">Verified</button>
+            <button class="filter-btn" data-filter="pending">Pending</button>
+          </div>
+          <div class="search-box">
+            <i class="fas fa-search" aria-hidden="true"></i>
+            <input type="search" id="voterSearch" placeholder="Search by name, email or citizenship no." aria-label="Search voters" autocomplete="off">
+          </div>
+        </div>
+
+        <section class="card-section" aria-labelledby="votersHeading">
+          <div class="card-section-header">
+            <h2 class="section-title" id="votersHeading"><i class="fas fa-user-check" aria-hidden="true"></i> Registered Voters</h2>
+            <span class="voter-count" id="voterCount">0 total</span>
+          </div>
+          <div class="table-container">
+            <table class="data-table" id="votersTable">
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Citizenship No.</th>
+                  <th scope="col">District</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <p class="empty-message" id="votersEmpty" hidden>No voters match your search.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="addVoterModal" role="dialog" aria-modal="true" aria-labelledby="addVoterModalTitle" hidden>
+    <div class="modal">
+      <h2 id="addVoterModalTitle">Add Voter</h2>
+      <form id="addVoterForm" novalidate>
+        <div class="form-group">
+          <label for="voterFullName" class="required">Full Name</label>
+          <div class="input-wrapper">
+            <i class="fas fa-user" aria-hidden="true"></i>
+            <input type="text" id="voterFullName" name="fullName" placeholder="Enter full name" required>
+          </div>
+          <div class="error-message" aria-live="polite"></div>
+        </div>
+        <div class="form-group">
+          <label for="voterEmail" class="required">Email</label>
+          <div class="input-wrapper">
+            <i class="fas fa-envelope" aria-hidden="true"></i>
+            <input type="email" id="voterEmail" name="email" placeholder="Enter email address" required>
+          </div>
+          <div class="error-message" aria-live="polite"></div>
+        </div>
+        <div class="form-group">
+          <label for="voterCitizenship" class="required">Citizenship No.</label>
+          <div class="input-wrapper">
+            <i class="fas fa-id-card" aria-hidden="true"></i>
+            <input type="text" id="voterCitizenship" name="citizenshipNumber" placeholder="Enter citizenship number" required>
+          </div>
+          <div class="error-message" aria-live="polite"></div>
+        </div>
+        <div class="form-group">
+          <label for="voterDistrict" class="required">District</label>
+          <div class="input-wrapper">
+            <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+            <input type="text" id="voterDistrict" name="district" placeholder="Enter district" required>
+          </div>
+          <div class="error-message" aria-live="polite"></div>
+        </div>
+        <div class="form-group">
+          <label for="voterStatus">Status</label>
+          <div class="input-wrapper">
+            <i class="fas fa-circle-check" aria-hidden="true"></i>
+            <select id="voterStatus" name="status">
+              <option value="verified">Verified</option>
+              <option value="pending" selected>Pending</option>
+            </select>
+          </div>
+          <div class="error-message" aria-live="polite"></div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" id="addVoterCancel">Cancel</button>
+          <button type="submit" class="btn" id="addVoterSubmit"><i class="fas fa-plus" aria-hidden="true"></i> Add Voter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="verifyVoterModal" role="dialog" aria-modal="true" aria-labelledby="verifyVoterModalTitle" hidden>
+    <div class="modal">
+      <h2 id="verifyVoterModalTitle">Verify Voter</h2>
+      <p id="verifyVoterMessage"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" id="verifyVoterCancel">Cancel</button>
+        <button type="button" class="btn" id="verifyVoterConfirm" style="background: var(--success); border-color: var(--success);"><i class="fas fa-check" aria-hidden="true"></i> Verify</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="removeVoterModal" role="dialog" aria-modal="true" aria-labelledby="removeVoterModalTitle" hidden>
+    <div class="modal">
+      <h2 id="removeVoterModalTitle">Remove Voter</h2>
+      <p id="removeVoterMessage"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" id="removeVoterCancel">Cancel</button>
+        <button type="button" class="btn" id="removeVoterConfirm" style="background: var(--error); border-color: var(--error);"><i class="fas fa-trash" aria-hidden="true"></i> Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <script src="js/data.js"></script>
+  <script>
+    const AdminVoters = {
+      currentFilter: 'all',
+      searchQuery: '',
+      voterToVerify: null,
+      voterToRemove: null,
+
+      init() {
+        this.checkAuth();
+        this.initSidebar();
+        this.initLogout();
+        this.initFilterButtons();
+        this.initSearch();
+        this.initModals();
+        this.renderVotersTable();
+      },
+
+      checkAuth() {
+        const isAdmin = sessionStorage.getItem('isAdmin');
+        if (!isAdmin) {
+          window.location.href = 'admin-login.html';
+        }
+      },
+
+      initSidebar() {
+        const hamburger = document.getElementById('hamburger');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        hamburger?.addEventListener('click', () => {
+          const isOpen = sidebar.classList.toggle('open');
+          hamburger.setAttribute('aria-expanded', isOpen);
+          overlay.classList.toggle('visible');
+        });
+
+        overlay?.addEventListener('click', () => {
+          sidebar.classList.remove('open');
+          hamburger.setAttribute('aria-expanded', 'false');
+          overlay.classList.remove('visible');
+        });
+      },
+
+      initLogout() {
+        const logoutBtn = document.getElementById('logoutBtn');
+        logoutBtn?.addEventListener('click', () => {
+          sessionStorage.removeItem('adminUser');
+          sessionStorage.removeItem('isAdmin');
+          window.location.href = 'admin-login.html';
+        });
+      },
+
+      initFilterButtons() {
+        const container = document.getElementById('filterButtons');
+        container.querySelectorAll('.filter-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            this.currentFilter = btn.dataset.filter;
+            container.querySelectorAll('.filter-btn').forEach(b => {
+              b.classList.toggle('active', b === btn);
+            });
+            this.renderVotersTable();
+          });
+        });
+      },
+
+      initSearch() {
+        const input = document.getElementById('voterSearch');
+        input?.addEventListener('input', () => {
+          this.searchQuery = input.value.trim().toLowerCase();
+          this.renderVotersTable();
+        });
+      },
+
+      initModals() {
+        const addBtn = document.getElementById('addVoterBtn');
+        const addModal = document.getElementById('addVoterModal');
+        const verifyModal = document.getElementById('verifyVoterModal');
+        const removeModal = document.getElementById('removeVoterModal');
+        const addForm = document.getElementById('addVoterForm');
+        const addCancel = document.getElementById('addVoterCancel');
+        const verifyCancel = document.getElementById('verifyVoterCancel');
+        const verifyConfirm = document.getElementById('verifyVoterConfirm');
+        const removeCancel = document.getElementById('removeVoterCancel');
+        const removeConfirm = document.getElementById('removeVoterConfirm');
+
+        addBtn?.addEventListener('click', () => this.openAddModal());
+        addCancel?.addEventListener('click', () => this.closeAddModal());
+        verifyCancel?.addEventListener('click', () => this.closeVerifyModal());
+        removeCancel?.addEventListener('click', () => this.closeRemoveModal());
+        verifyConfirm?.addEventListener('click', () => this.confirmVerify());
+        removeConfirm?.addEventListener('click', () => this.confirmRemove());
+
+        addModal?.addEventListener('click', (e) => {
+          if (e.target === addModal) this.closeAddModal();
+        });
+        verifyModal?.addEventListener('click', (e) => {
+          if (e.target === verifyModal) this.closeVerifyModal();
+        });
+        removeModal?.addEventListener('click', (e) => {
+          if (e.target === removeModal) this.closeRemoveModal();
+        });
+
+        addForm?.addEventListener('submit', (e) => this.handleAddVoter(e));
+
+        addForm?.querySelectorAll('input[required], select[required]').forEach(input => {
+          input.addEventListener('blur', () => this.validateField(input));
+          input.addEventListener('input', () => this.clearError(input));
+        });
+      },
+
+      openAddModal() {
+        const modal = document.getElementById('addVoterModal');
+        const form = document.getElementById('addVoterForm');
+        form.reset();
+        this.clearAllErrors(form);
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => document.getElementById('voterFullName')?.focus(), 100);
+      },
+
+      closeAddModal() {
+        const modal = document.getElementById('addVoterModal');
+        modal.hidden = true;
+        document.body.style.overflow = '';
+      },
+
+      openVerifyModal(voter) {
+        this.voterToVerify = voter;
+        const modal = document.getElementById('verifyVoterModal');
+        const message = document.getElementById('verifyVoterMessage');
+        message.textContent = `Verify ${voter.fullName}? They will be able to vote.`;
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+      },
+
+      closeVerifyModal() {
+        const modal = document.getElementById('verifyVoterModal');
+        this.voterToVerify = null;
+        modal.hidden = true;
+        document.body.style.overflow = '';
+      },
+
+      openRemoveModal(voter) {
+        this.voterToRemove = voter;
+        const modal = document.getElementById('removeVoterModal');
+        const message = document.getElementById('removeVoterMessage');
+        message.textContent = `Remove ${voter.fullName}? This cannot be undone.`;
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+      },
+
+      closeRemoveModal() {
+        const modal = document.getElementById('removeVoterModal');
+        this.voterToRemove = null;
+        modal.hidden = true;
+        document.body.style.overflow = '';
+      },
+
+      validateField(input) {
+        if (input.required && !input.value.trim()) {
+          this.setError(input, this.getRequiredMessage(input));
+          return false;
+        }
+        if (input.type === 'email' && input.value) {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(input.value)) {
+            this.setError(input, 'Please enter a valid email address');
+            return false;
+          }
+        }
+        this.setSuccess(input);
+        return true;
+      },
+
+      getRequiredMessage(input) {
+        const messages = {
+          voterFullName: 'Full name is required',
+          voterEmail: 'Email is required',
+          voterCitizenship: 'Citizenship number is required',
+          voterDistrict: 'District is required'
+        };
+        return messages[input.id] || 'This field is required';
+      },
+
+      setError(input, message) {
+        input.classList.remove('success');
+        input.classList.add('error');
+        const errorEl = input.closest('.form-group')?.querySelector('.error-message');
+        if (errorEl) {
+          errorEl.textContent = message;
+          errorEl.classList.add('visible');
+        }
+      },
+
+      setSuccess(input) {
+        input.classList.remove('error');
+        input.classList.add('success');
+        const errorEl = input.closest('.form-group')?.querySelector('.error-message');
+        if (errorEl) {
+          errorEl.classList.remove('visible');
+        }
+      },
+
+      clearError(input) {
+        input.classList.remove('error');
+        const errorEl = input.closest('.form-group')?.querySelector('.error-message');
+        if (errorEl) {
+          errorEl.classList.remove('visible');
+        }
+      },
+
+      clearAllErrors(form) {
+        form.querySelectorAll('.error, .success').forEach(el => el.classList.remove('error', 'success'));
+        form.querySelectorAll('.error-message').forEach(el => el.classList.remove('visible'));
+      },
+
+      handleAddVoter(e) {
+        e.preventDefault();
+        const form = e.target;
+        const fields = {
+          fullName: form.querySelector('#voterFullName'),
+          email: form.querySelector('#voterEmail'),
+          citizenshipNumber: form.querySelector('#voterCitizenship'),
+          district: form.querySelector('#voterDistrict')
+        };
+        const fullName = fields.fullName.value.trim();
+        const email = fields.email.value.trim();
+        const citizenshipNumber = fields.citizenshipNumber.value.trim();
+        const district = fields.district.value.trim();
+        const status = form.querySelector('#voterStatus').value;
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const invalidFields = [];
+        if (!fullName) {
+          this.setError(fields.fullName, 'Full name is required');
+          invalidFields.push(fields.fullName);
+        }
+        if (!email) {
+          this.setError(fields.email, 'Email is required');
+          invalidFields.push(fields.email);
+        } else if (!emailRegex.test(email)) {
+          this.setError(fields.email, 'Please enter a valid email address');
+          invalidFields.push(fields.email);
+        }
+        if (!citizenshipNumber) {
+          this.setError(fields.citizenshipNumber, 'Citizenship number is required');
+          invalidFields.push(fields.citizenshipNumber);
+        }
+        if (!district) {
+          this.setError(fields.district, 'District is required');
+          invalidFields.push(fields.district);
+        }
+
+        if (invalidFields.length) {
+          invalidFields[0].focus();
+          return;
+        }
+
+        const result = DataStore.addVoter({ fullName, email, citizenshipNumber, district, status });
+        if (result.success) {
+          this.closeAddModal();
+          this.showToast('Voter added successfully', 'success');
+          this.renderVotersTable();
+        } else {
+          this.showToast(result.message || 'Failed to add voter', 'error');
+        }
+      },
+
+      confirmVerify() {
+        if (!this.voterToVerify) return;
+        const result = DataStore.verifyVoter(this.voterToVerify.id);
+        if (result.success) {
+          this.closeVerifyModal();
+          this.showToast('Voter verified successfully', 'success');
+          this.renderVotersTable();
+        } else {
+          this.showToast(result.message || 'Failed to verify voter', 'error');
+        }
+      },
+
+      confirmRemove() {
+        if (!this.voterToRemove) return;
+        const result = DataStore.removeVoter(this.voterToRemove.id);
+        if (result.success) {
+          this.closeRemoveModal();
+          this.showToast('Voter removed successfully', 'success');
+          this.renderVotersTable();
+        } else {
+          this.showToast(result.message || 'Failed to remove voter', 'error');
+        }
+      },
+
+      getFilteredVoters() {
+        let voters = DataStore.getVoters();
+        if (this.currentFilter !== 'all') {
+          voters = voters.filter(v => v.status === this.currentFilter);
+        }
+        if (this.searchQuery) {
+          const q = this.searchQuery;
+          voters = voters.filter(v =>
+            v.fullName.toLowerCase().includes(q) ||
+            v.email.toLowerCase().includes(q) ||
+            v.citizenshipNumber.toLowerCase().includes(q)
+          );
+        }
+        return voters;
+      },
+
+      renderVotersTable() {
+        const voters = this.getFilteredVoters();
+        const tbody = document.querySelector('#votersTable tbody');
+        const empty = document.getElementById('votersEmpty');
+        const countEl = document.getElementById('voterCount');
+
+        countEl.textContent = `${voters.length} total`;
+
+        if (!voters.length) {
+          tbody.innerHTML = '';
+          empty.hidden = false;
+          return;
+        }
+
+        empty.hidden = true;
+        tbody.innerHTML = voters.map(voter => {
+          const initial = voter.fullName.charAt(0).toUpperCase();
+          const isVerified = voter.status === 'verified';
+          const statusBadge = isVerified
+            ? '<span class="badge badge-verified">VERIFIED</span>'
+            : '<span class="badge badge-pending">PENDING</span>';
+          const verifyBtn = isVerified ? '' : `
+              <button class="btn-verify" data-action="verify" data-voter-id="${voter.id}">
+                <i class="fas fa-check" aria-hidden="true"></i> Verify
+              </button>`;
+
+          return `
+            <tr>
+              <td>
+                <div class="voter-name-cell">
+                  <span class="voter-avatar-sm" aria-hidden="true">${initial}</span>
+                  <span>${this.escapeHtml(voter.fullName)}</span>
+                </div>
+              </td>
+              <td>${this.escapeHtml(voter.email)}</td>
+              <td>${this.escapeHtml(voter.citizenshipNumber)}</td>
+              <td>${this.escapeHtml(voter.district)}</td>
+              <td>${statusBadge}</td>
+              <td>
+                <div class="action-buttons">
+                  ${verifyBtn}
+                  <button class="btn-remove" data-action="remove" data-voter-id="${voter.id}" aria-label="Remove ${this.escapeHtml(voter.fullName)}">
+                    <i class="fas fa-trash" aria-hidden="true"></i>
+                    <span>Remove</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        tbody.querySelectorAll('[data-action]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const voter = voters.find(v => v.id === btn.dataset.voterId);
+            if (!voter) return;
+            if (btn.dataset.action === 'verify') {
+              this.openVerifyModal(voter);
+            } else {
+              this.openRemoveModal(voter);
+            }
+          });
+        });
+      },
+
+      showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+          toast.classList.remove('show');
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      },
+
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => AdminVoters.init());
+  </script>
+  <style>
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.5rem 2rem;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--card-border);
+      flex-wrap: wrap;
+      border-radius: var(--radius);
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--card-border);
+    }
+
+    .filter-label {
+      font-weight: 500;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      white-space: nowrap;
+    }
+
+    .filter-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 0.5rem 1rem;
+      background: transparent;
+      border: 1px solid var(--card-border);
+      border-radius: 999px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .filter-btn:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .filter-btn.active {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: var(--bg-dark);
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .search-box i {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      pointer-events: none;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 0.625rem 1rem 0.625rem 2.5rem;
+      background: var(--bg-dark);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15);
+    }
+
+    .search-box input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .voter-count {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .voter-name-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .voter-avatar-sm {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #60a5fa);
+      color: var(--bg-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .badge-verified {
+      background: rgba(46, 204, 113, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .badge-pending {
+      background: rgba(243, 156, 18, 0.15);
+      color: #f39c12;
+      border: 1px solid rgba(243, 156, 18, 0.3);
+    }
+
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .btn-verify {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      background: var(--success);
+      border: 1px solid var(--success);
+      color: var(--bg-dark);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      transition: all var(--transition);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .btn-verify:hover {
+      background: #27ae60;
+      border-color: #27ae60;
+    }
+
+    .btn-remove {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      background: transparent;
+      border: 1px solid var(--error);
+      color: var(--error);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      transition: all var(--transition);
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .btn-remove:hover {
+      background: var(--error);
+      color: var(--text-primary);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+      transition: opacity var(--transition), visibility var(--transition);
+    }
+
+    .modal-overlay:not([hidden]) {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      width: 100%;
+      max-width: 480px;
+      margin: auto;
+      box-shadow: var(--shadow-hover);
+      transform: scale(0.95);
+      transition: transform var(--transition);
+      max-height: 90vh;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--card-border) transparent;
+    }
+
+    .modal-overlay:not([hidden]) .modal {
+      transform: scale(1);
+    }
+
+    .modal h2 {
+      font-size: 1.35rem;
+      text-align: center;
+      margin: 0 0 1.5rem;
+      padding: 0.25rem 0 0;
+    }
+
+    .modal::-webkit-scrollbar,
+    .modal-overlay::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .modal::-webkit-scrollbar-track,
+    .modal-overlay::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .modal::-webkit-scrollbar-thumb {
+      background: var(--card-border);
+      border-radius: 8px;
+    }
+
+    .modal::-webkit-scrollbar-thumb:hover {
+      background: var(--gold);
+    }
+
+    .modal-overlay::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+    }
+
+    .modal p {
+      color: var(--text-secondary);
+      text-align: center;
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .modal-actions .btn {
+      flex: 1;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+    }
+
+    .btn-outline:hover {
+      background: var(--gold);
+      color: var(--bg-dark);
+    }
+
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 1100;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .toast {
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transform: translateX(120%);
+      opacity: 0;
+      transition: transform var(--transition), opacity var(--transition);
+      box-shadow: var(--shadow);
+    }
+
+    .toast.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      background: rgba(46, 204, 113, 0.9);
+      color: var(--bg-dark);
+      border: 1px solid var(--success);
+    }
+
+    .toast.error {
+      background: rgba(231, 76, 60, 0.9);
+      color: var(--text-primary);
+      border: 1px solid var(--error);
+    }
+
+    @media (max-width: 768px) {
+      #votersTable {
+        min-width: 760px;
+      }
+
+      #votersTable th:first-child,
+      #votersTable td:first-child {
+        min-width: 200px;
+        white-space: normal;
+      }
+
+      #votersTable th:not(:first-child),
+      #votersTable td:not(:first-child) {
+        white-space: nowrap;
+      }
+
+      .filter-bar {
+        padding: 1rem 1.5rem;
+      }
+
+      .filter-label {
+        width: 100%;
+        margin-bottom: 0.5rem;
+      }
+
+      .search-box {
+        min-width: 100%;
+      }
+
+      .voter-name-cell {
+        gap: 0.5rem;
+      }
+
+      .voter-avatar-sm {
+        width: 32px;
+        height: 32px;
+        font-size: 0.875rem;
+      }
+
+      .action-buttons {
+        flex-wrap: nowrap;
+      }
+
+      .btn-remove span {
+        display: inline;
+      }
+
+      .modal {
+        padding: 1.5rem;
+        max-height: 92vh;
+      }
+
+      .modal-actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</body>
+</html>

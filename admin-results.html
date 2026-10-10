@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoteSecure - Election Results</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="dashboard-layout">
+    <aside class="sidebar" id="sidebar" role="navigation" aria-label="Admin navigation">
+      <div class="sidebar-header">
+        <div class="logo" aria-hidden="true">
+          <i class="fa-solid fa-check-to-slot"></i>
+          <span>VoteSecure <small>Admin Panel</small></span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <span class="nav-group-label">MAIN</span>
+            <a href="admin-dashboard.html" class="nav-link"><i class="fas fa-tachometer-alt" aria-hidden="true"></i> Dashboard</a>
+          </li>
+          <li>
+            <span class="nav-group-label">ELECTIONS</span>
+            <a href="admin-elections.html" class="nav-link"><i class="fas fa-calendar-check" aria-hidden="true"></i> Manage Elections</a>
+            <a href="admin-candidates.html" class="nav-link"><i class="fas fa-users" aria-hidden="true"></i> Candidates</a>
+            <a href="admin-results.html" class="nav-link active"><i class="fas fa-chart-bar" aria-hidden="true"></i> Results</a>
+          </li>
+          <li>
+            <span class="nav-group-label">VOTERS</span>
+            <a href="admin-voters.html" class="nav-link"><i class="fas fa-user-check" aria-hidden="true"></i> Voter Management</a>
+          </li>
+          <li>
+            <span class="nav-group-label">SYSTEM</span>
+            <a href="index.html" class="nav-link"><i class="fas fa-globe" aria-hidden="true"></i> Public Site</a>
+          </li>
+        </ul>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="admin-user-box">
+          <div class="admin-avatar" aria-hidden="true">S</div>
+          <div class="admin-info">
+            <span class="admin-name">System Administrator</span>
+            <span class="admin-role">Administrator</span>
+          </div>
+        </div>
+        <button class="btn btn-logout btn-full" id="logoutBtn"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Logout</button>
+      </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <div class="main-wrapper">
+      <header class="top-bar" role="banner">
+        <div class="top-bar-left">
+          <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="sidebar">
+            <i class="fas fa-bars" aria-hidden="true"></i>
+          </button>
+          <h1 class="page-title">Election Results</h1>
+        </div>
+        <div class="top-bar-right"></div>
+      </header>
+
+      <main class="main-content" role="main">
+        <div class="results-toolbar" aria-label="Election selection">
+          <label for="electionSelect" class="toolbar-label">Select election:</label>
+          <select id="electionSelect" class="election-select"></select>
+          <a href="results.html" id="viewPublicLink" class="btn btn-outline btn-auto"><i class="fas fa-external-link-alt" aria-hidden="true"></i> View Public Page</a>
+        </div>
+
+        <div id="resultsBody"></div>
+      </main>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script>
+    const AdminResults = {
+      electionId: '',
+      election: null,
+      candidates: [],
+
+      init() {
+        this.checkAuth();
+        this.initSidebar();
+        this.initLogout();
+        this.initElectionSelect();
+        this.render();
+      },
+
+      checkAuth() {
+        const isAdmin = sessionStorage.getItem('isAdmin');
+        if (!isAdmin) {
+          window.location.href = 'admin-login.html';
+        }
+      },
+
+      initSidebar() {
+        const hamburger = document.getElementById('hamburger');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        hamburger?.addEventListener('click', () => {
+          const isOpen = sidebar.classList.toggle('open');
+          hamburger.setAttribute('aria-expanded', isOpen);
+          overlay.classList.toggle('visible');
+        });
+
+        overlay?.addEventListener('click', () => {
+          sidebar.classList.remove('open');
+          hamburger.setAttribute('aria-expanded', 'false');
+          overlay.classList.remove('visible');
+        });
+      },
+
+      initLogout() {
+        const logoutBtn = document.getElementById('logoutBtn');
+        logoutBtn?.addEventListener('click', () => {
+          sessionStorage.removeItem('adminUser');
+          sessionStorage.removeItem('isAdmin');
+          window.location.href = 'admin-login.html';
+        });
+      },
+
+      initElectionSelect() {
+        const select = document.getElementById('electionSelect');
+        const elections = DataStore.getElections();
+        const params = new URLSearchParams(window.location.search);
+        const requested = params.get('election');
+
+        let defaultId = '';
+        if (requested && elections.some(e => e.id === requested)) {
+          defaultId = requested;
+        } else {
+          const ongoing = elections.find(e => e.status === 'ongoing');
+          defaultId = ongoing ? ongoing.id : (elections[0] ? elections[0].id : '');
+        }
+        this.electionId = defaultId;
+
+        select.innerHTML = elections.length
+          ? elections.map(e => `<option value="${e.id}" ${e.id === defaultId ? 'selected' : ''}>${this.escapeHtml(e.title)}</option>`).join('')
+          : '<option value="">No elections</option>';
+
+        select.addEventListener('change', () => {
+          this.electionId = select.value;
+          this.render();
+        });
+      },
+
+      loadElection() {
+        this.election = DataStore.getElectionById(this.electionId) || null;
+        this.candidates = this.election ? DataStore.getElectionResults(this.electionId) : [];
+      },
+
+      render() {
+        this.loadElection();
+
+        const link = document.getElementById('viewPublicLink');
+        link.setAttribute('href', this.election
+          ? `results.html?election=${encodeURIComponent(this.election.id)}`
+          : 'results.html');
+
+        const body = document.getElementById('resultsBody');
+        if (!this.election) {
+          body.innerHTML = '<p class="empty-message">No elections available. Create an election to see results.</p>';
+          return;
+        }
+
+        body.innerHTML = this.renderStats() + this.renderVoteCount();
+        this.animateBars();
+      },
+
+      getTotalVotes() {
+        return this.candidates.reduce((sum, c) => sum + c.votes, 0);
+      },
+
+      getLeadingCandidate() {
+        return this.candidates.length ? this.candidates[0] : null;
+      },
+
+      renderStats() {
+        const totalVotes = this.getTotalVotes();
+        const leader = this.getLeadingCandidate();
+        const isCompleted = this.election.status === 'completed';
+        const leaderName = leader ? leader.name : '—';
+        const leaderLabel = isCompleted ? 'Winner' : 'Leading Candidate';
+
+        return `
+          <section class="stats-grid results-stats" aria-label="Election statistics">
+            <article class="stat-card">
+              <div class="stat-icon"><i class="fas fa-vote-yea" aria-hidden="true"></i></div>
+              <div class="stat-content">
+                <span class="stat-value">${totalVotes.toLocaleString()}</span>
+                <span class="stat-label">Total Votes Cast</span>
+              </div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-icon"><i class="fas fa-users" aria-hidden="true"></i></div>
+              <div class="stat-content">
+                <span class="stat-value">${this.candidates.length}</span>
+                <span class="stat-label">Number of Candidates</span>
+              </div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-icon ${isCompleted ? 'verified' : ''}">
+                <i class="fas ${isCompleted ? 'fa-trophy' : 'fa-user-check'}" aria-hidden="true"></i>
+              </div>
+              <div class="stat-content">
+                <span class="stat-value">${this.escapeHtml(leaderName)}</span>
+                <span class="stat-label">${leaderLabel}</span>
+              </div>
+            </article>
+          </section>
+        `;
+      },
+
+      renderVoteCount() {
+        const totalVotes = this.getTotalVotes();
+        const isZero = totalVotes === 0;
+
+        return `
+          <section class="card-section" aria-labelledby="voteCountTitle">
+            <div class="card-section-header">
+              <h2 class="section-title" id="voteCountTitle"><i class="fas fa-chart-bar" aria-hidden="true"></i> Vote Count</h2>
+              <span class="election-count">${this.candidates.length} candidate${this.candidates.length !== 1 ? 's' : ''}</span>
+            </div>
+            ${this.candidates.length === 0
+              ? '<p class="empty-message">No candidates found for this election.</p>'
+              : `<div class="candidates-list" role="list" aria-label="Candidates ranked by votes">
+                   ${this.candidates.map((c, i) => this.renderCandidateRow(c, i, isZero)).join('')}
+                 </div>
+                 ${isZero ? '<p class="no-votes-note">No votes have been cast yet.</p>' : ''}`
+            }
+          </section>
+        `;
+      },
+
+      renderCandidateRow(candidate, index, isZero) {
+        const rank = index + 1;
+        const initial = candidate.name.charAt(0).toUpperCase();
+        const percentage = isZero ? '0.0' : candidate.percentage;
+        const isLeader = index === 0;
+        const isCompleted = this.election.status === 'completed';
+        const badgeText = isLeader ? (isCompleted ? 'Winner' : 'Leading') : '';
+        const badgeClass = badgeText ? (isCompleted ? 'badge-winner' : 'badge-leading') : '';
+        const barWidth = isZero ? 0 : parseFloat(percentage);
+
+        return `
+          <article class="candidate-row ${isLeader ? 'leader' : ''}" role="listitem" style="--bar-width: ${barWidth}%; --delay: ${index * 100}ms">
+            <div class="rank">${rank}</div>
+            <div class="candidate-avatar" aria-hidden="true">${initial}</div>
+            <div class="candidate-info">
+              <div class="candidate-header">
+                <h3 class="candidate-name">${this.escapeHtml(candidate.name)}</h3>
+                <span class="badge candidate-party">${this.escapeHtml(candidate.party)}</span>
+                ${badgeText ? `<span class="badge ${badgeClass}">${badgeText}</span>` : ''}
+              </div>
+              <div class="vote-details">
+                <span class="vote-count">${candidate.votes.toLocaleString()} vote${candidate.votes !== 1 ? 's' : ''}</span>
+                <span class="vote-percentage">${percentage}%</span>
+              </div>
+              <div class="progress-bar-container" aria-hidden="true">
+                <div class="progress-bar ${isLeader ? 'leader-bar' : ''}" style="width: 0%; transition-delay: var(--delay)"></div>
+              </div>
+            </div>
+          </article>
+        `;
+      },
+
+      animateBars() {
+        const bars = document.querySelectorAll('.progress-bar');
+        if (!bars.length) return;
+
+        const setWidths = () => {
+          bars.forEach(bar => {
+            const row = bar.closest('.candidate-row');
+            const width = row ? row.style.getPropertyValue('--bar-width') : '0%';
+            bar.style.width = width || '0%';
+          });
+        };
+
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          setWidths();
+          return;
+        }
+
+        requestAnimationFrame(() => requestAnimationFrame(setWidths));
+      },
+
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => AdminResults.init());
+  </script>
+  <style>
+    .results-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      padding: 1.25rem 1.5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      margin-bottom: 1.5rem;
+    }
+
+    .toolbar-label {
+      font-weight: 500;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      white-space: nowrap;
+    }
+
+    .election-select {
+      flex: 1;
+      min-width: 220px;
+      padding: 0.625rem 1rem;
+      background: var(--bg-dark);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      cursor: pointer;
+      color-scheme: dark;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .election-select:focus {
+      outline: none;
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15);
+    }
+
+    .results-toolbar .btn {
+      padding: 0.625rem 1.25rem;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .results-stats {
+      grid-template-columns: repeat(3, 1fr);
+      margin-bottom: 2rem;
+    }
+
+    .election-count {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .candidates-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .candidate-row {
+      background: var(--bg-dark);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
+    }
+
+    .candidate-row:hover {
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+      border-color: rgba(201, 168, 76, 0.3);
+    }
+
+    .candidate-row.leader {
+      border-color: rgba(201, 168, 76, 0.4);
+      box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.1);
+    }
+
+    .rank {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--gold);
+      width: 40px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .candidate-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), #e8c56d);
+      color: var(--bg-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .candidate-row.leader .candidate-avatar {
+      box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.2);
+    }
+
+    .candidate-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .candidate-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .candidate-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .candidate-party {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.6rem;
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .badge-winner {
+      background: rgba(201, 168, 76, 0.2);
+      color: var(--gold);
+      border: 1px solid rgba(201, 168, 76, 0.5);
+      font-size: 0.65rem;
+    }
+
+    .badge-leading {
+      background: transparent;
+      color: var(--gold);
+      border: 1px solid rgba(201, 168, 76, 0.5);
+      font-size: 0.65rem;
+    }
+
+    .vote-details {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      flex-wrap: wrap;
+    }
+
+    .vote-count {
+      color: var(--gold);
+      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+    }
+
+    .vote-percentage {
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-family: 'Playfair Display', serif;
+    }
+
+    .progress-bar-container {
+      height: 8px;
+      background: var(--card-bg);
+      border-radius: 999px;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--gold), #e8c56d);
+      border-radius: 999px;
+      transition: width 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .progress-bar.leader-bar {
+      background: linear-gradient(90deg, #e8c56d, var(--gold), #f0d48a);
+      box-shadow: 0 0 12px rgba(201, 168, 76, 0.5);
+    }
+
+    .no-votes-note {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: rgba(201, 168, 76, 0.05);
+      border: 1px dashed rgba(201, 168, 76, 0.2);
+      border-radius: 8px;
+    }
+
+    .badge-ongoing {
+      background: rgba(46, 204, 113, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .badge-completed {
+      background: rgba(201, 168, 76, 0.15);
+      color: var(--gold);
+      border: 1px solid rgba(201, 168, 76, 0.3);
+    }
+
+    .badge-upcoming {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+    }
+
+    .btn-outline:hover {
+      background: var(--gold);
+      color: var(--bg-dark);
+    }
+
+    @media (max-width: 900px) {
+      .results-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .results-toolbar {
+        padding: 1rem 1.25rem;
+      }
+
+      .toolbar-label {
+        width: 100%;
+      }
+
+      .election-select {
+        min-width: 100%;
+      }
+
+      .results-toolbar .btn {
+        width: 100%;
+      }
+
+      .candidate-row {
+        padding: 1rem 1.25rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .rank {
+        width: 32px;
+        font-size: 1.25rem;
+      }
+
+      .candidate-avatar {
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+      }
+
+      .candidate-header {
+        gap: 0.5rem;
+      }
+
+      .candidate-name {
+        font-size: 1rem;
+      }
+
+      .vote-details {
+        gap: 0.75rem;
+      }
+    }
+  </style>
+</body>
+</html>

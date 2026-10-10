@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoteSecure - Digital Ballot</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="ballot-page">
+    <header class="top-bar" role="banner">
+      <div class="top-bar-left">
+        <div class="logo" aria-hidden="true">
+          <i class="fa-solid fa-check-to-slot"></i>
+          <span>VoteSecure</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content" role="main">
+      <div id="ballotContent"></div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
+    <div class="modal">
+      <h2 id="modalTitle">Confirm Your Vote</h2>
+      <p id="modalMessage"></p>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="modalCancel">Cancel</button>
+        <button class="btn" id="modalConfirm">Confirm Vote</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script>
+    const Ballot = {
+      electionId: '',
+      election: null,
+      candidates: [],
+      voterEmail: '',
+      voterName: '',
+      selectedCandidateId: null,
+
+      init() {
+        this.parseUrlParams();
+        this.checkAuth();
+        this.loadElection();
+        this.render();
+      },
+
+      parseUrlParams() {
+        const params = new URLSearchParams(window.location.search);
+        this.electionId = params.get('election');
+      },
+
+      checkAuth() {
+        this.voterName = sessionStorage.getItem('voterName');
+        this.voterEmail = sessionStorage.getItem('voterEmail');
+        if (!this.voterName || !this.voterEmail) {
+          window.location.href = 'index.html';
+        }
+      },
+
+      loadElection() {
+        this.election = DataStore.getElectionById(this.electionId);
+        if (!this.election || this.election.status !== 'ongoing') {
+          this.showError('This election is not available for voting.', true);
+          return;
+        }
+
+        if (DataStore.hasVoted(this.voterEmail, this.electionId)) {
+          this.showAlreadyVoted();
+          return;
+        }
+
+        this.candidates = DataStore.getCandidatesByElection(this.electionId);
+      },
+
+      render() {
+        const container = document.getElementById('ballotContent');
+        if (!this.election || this.election.status !== 'ongoing') {
+          return;
+        }
+
+        if (DataStore.hasVoted(this.voterEmail, this.electionId)) {
+          this.showAlreadyVoted();
+          return;
+        }
+
+        container.innerHTML = `
+          <div class="ballot-header">
+            <h1 class="ballot-title">${this.escapeHtml(this.election.title)}</h1>
+            <p class="ballot-description">${this.escapeHtml(this.election.description)}</p>
+          </div>
+          <h2 class="section-title"><i class="fas fa-user-check" aria-hidden="true"></i> Select your candidate</h2>
+          <div class="candidates-grid" id="candidatesGrid" role="radiogroup" aria-label="Candidates">
+            ${this.candidates.map(candidate => this.renderCandidateCard(candidate)).join('')}
+          </div>
+          <div class="ballot-actions">
+            <button class="btn" id="submitVoteBtn" disabled><i class="fas fa-check" aria-hidden="true"></i> Submit Vote</button>
+            <a href="voter-dashboard.html" class="btn btn-outline" id="cancelBtn">Cancel</a>
+          </div>
+        `;
+
+        this.initCandidateSelection();
+        this.initSubmitButton();
+      },
+
+      renderCandidateCard(candidate) {
+        const initial = candidate.name.charAt(0).toUpperCase();
+        return `
+          <article class="candidate-card" data-candidate-id="${candidate.id}" role="radio" aria-checked="false" tabindex="0">
+            <div class="candidate-avatar" aria-hidden="true">${initial}</div>
+            <div class="candidate-info">
+              <div class="candidate-header">
+                <h3 class="candidate-name">${this.escapeHtml(candidate.name)}</h3>
+                <span class="badge candidate-party">${this.escapeHtml(candidate.party)}</span>
+              </div>
+              <p class="candidate-bio">${this.escapeHtml(candidate.bio)}</p>
+            </div>
+            <div class="candidate-selector" aria-hidden="true">
+              <div class="selection-circle"></div>
+            </div>
+          </article>
+        `;
+      },
+
+      initCandidateSelection() {
+        const cards = document.querySelectorAll('.candidate-card');
+        cards.forEach(card => {
+          card.addEventListener('click', () => this.selectCandidate(card));
+          card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              this.selectCandidate(card);
+            }
+          });
+        });
+      },
+
+      selectCandidate(card) {
+        const candidateId = card.dataset.candidateId;
+        if (this.selectedCandidateId === candidateId) return;
+
+        document.querySelectorAll('.candidate-card').forEach(c => {
+          c.classList.remove('selected');
+          c.setAttribute('aria-checked', 'false');
+        });
+
+        card.classList.add('selected');
+        card.setAttribute('aria-checked', 'true');
+        this.selectedCandidateId = candidateId;
+
+        const submitBtn = document.getElementById('submitVoteBtn');
+        if (submitBtn) submitBtn.disabled = false;
+      },
+
+      initSubmitButton() {
+        const submitBtn = document.getElementById('submitVoteBtn');
+        submitBtn?.addEventListener('click', () => this.openConfirmModal());
+      },
+
+      openConfirmModal() {
+        if (!this.selectedCandidateId) return;
+
+        const candidate = this.candidates.find(c => c.id === this.selectedCandidateId);
+        if (!candidate) return;
+
+        const modal = document.getElementById('confirmModal');
+        const message = document.getElementById('modalMessage');
+        message.textContent = `Confirm your vote for ${candidate.name} (${candidate.party})? This action cannot be undone.`;
+
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+
+        document.getElementById('modalCancel').onclick = () => this.closeConfirmModal();
+        document.getElementById('modalConfirm').onclick = () => this.confirmVote(candidate);
+        modal.onclick = (e) => { if (e.target === modal) this.closeConfirmModal(); };
+      },
+
+      closeConfirmModal() {
+        const modal = document.getElementById('confirmModal');
+        modal.hidden = true;
+        document.body.style.overflow = '';
+      },
+
+      confirmVote(candidate) {
+        this.closeConfirmModal();
+        const result = DataStore.castVote(this.voterEmail, this.electionId, candidate.id);
+
+        if (result.success) {
+          this.showThankYou(candidate);
+        } else {
+          this.showError(result.message, false);
+        }
+      },
+
+      showThankYou(candidate) {
+        const container = document.getElementById('ballotContent');
+        container.innerHTML = `
+          <div class="result-screen success">
+            <div class="result-icon" aria-hidden="true"><i class="fas fa-check"></i></div>
+            <h1>Your vote has been cast successfully!</h1>
+            <p class="result-election">${this.escapeHtml(this.election.title)}</p>
+            <p class="result-candidate">You voted for <strong>${this.escapeHtml(candidate.name)}</strong> (${this.escapeHtml(candidate.party)})</p>
+            <a href="voter-dashboard.html" class="btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Dashboard</a>
+          </div>
+        `;
+      },
+
+      showAlreadyVoted() {
+        const container = document.getElementById('ballotContent');
+        container.innerHTML = `
+          <div class="result-screen voted">
+            <div class="result-icon" aria-hidden="true"><i class="fas fa-check"></i></div>
+            <h1>Already Voted</h1>
+            <p>You have already voted in this election</p>
+            <p class="result-election">${this.escapeHtml(this.election?.title || 'this election')}</p>
+            <a href="voter-dashboard.html" class="btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Dashboard</a>
+          </div>
+        `;
+      },
+
+      showError(message, showBackButton) {
+        const container = document.getElementById('ballotContent');
+        container.innerHTML = `
+          <div class="result-screen error">
+            <div class="result-icon" aria-hidden="true"><i class="fas fa-exclamation-triangle"></i></div>
+            <h1>Unable to Vote</h1>
+            <p>${this.escapeHtml(message)}</p>
+            ${showBackButton ? '<a href="voter-dashboard.html" class="btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Dashboard</a>' : ''}
+          </div>
+        `;
+      },
+
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => Ballot.init());
+  </script>
+  <style>
+    .ballot-page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ballot-page .top-bar {
+      padding: 1rem 2rem;
+    }
+
+    .ballot-page .top-bar-left .logo {
+      justify-content: flex-start;
+      margin-bottom: 0;
+    }
+
+    .ballot-page .top-bar-left .logo i {
+      font-size: 1.75rem;
+    }
+
+    .ballot-page .top-bar-left .logo span {
+      font-size: 1.5rem;
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+      width: 100%;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .ballot-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .ballot-title {
+      font-size: 1.75rem;
+      margin-bottom: 0.75rem;
+      color: var(--text-primary);
+    }
+
+    .ballot-description {
+      color: var(--text-secondary);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .candidates-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (min-width: 600px) {
+      .candidates-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .candidate-card {
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      cursor: pointer;
+      transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+      position: relative;
+    }
+
+    .candidate-card:hover {
+      border-color: var(--gold);
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-2px);
+    }
+
+    .candidate-card:focus {
+      outline: none;
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.3);
+    }
+
+    .candidate-card.selected {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.2);
+    }
+
+    .candidate-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), #e8c56d);
+      color: var(--bg-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .candidate-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .candidate-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .candidate-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .candidate-party {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.6rem;
+    }
+
+    .candidate-bio {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .candidate-selector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .selection-circle {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--card-border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color var(--transition), background var(--transition);
+    }
+
+    .candidate-card.selected .selection-circle {
+      border-color: var(--gold);
+      background: var(--gold);
+    }
+
+    .candidate-card.selected .selection-circle::after {
+      content: '';
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--bg-dark);
+    }
+
+    .ballot-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    @media (min-width: 480px) {
+      .ballot-actions {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .ballot-actions .btn {
+        flex: 1;
+        max-width: 280px;
+      }
+    }
+
+    .result-screen {
+      text-align: center;
+      padding: 3rem 1.5rem;
+    }
+
+    .result-screen .result-icon {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      font-size: 2.5rem;
+    }
+
+    .result-screen.success .result-icon {
+      background: rgba(46, 204, 113, 0.15);
+      color: var(--success);
+      border: 2px solid var(--success);
+    }
+
+    .result-screen.voted .result-icon {
+      background: rgba(201, 168, 76, 0.15);
+      color: var(--gold);
+      border: 2px solid var(--gold);
+    }
+
+    .result-screen.error .result-icon {
+      background: rgba(231, 76, 60, 0.15);
+      color: var(--error);
+      border: 2px solid var(--error);
+    }
+
+    .result-screen h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .result-screen p {
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .result-election {
+      font-size: 1rem;
+      color: var(--text-primary);
+      font-weight: 500;
+      margin-bottom: 1.5rem !important;
+    }
+
+    .result-candidate {
+      color: var(--text-secondary) !important;
+      font-size: 0.95rem !important;
+      margin-bottom: 2rem !important;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity var(--transition), visibility var(--transition);
+    }
+
+    .modal-overlay:not([hidden]) {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: var(--shadow-hover);
+      transform: scale(0.95);
+      transition: transform var(--transition);
+    }
+
+    .modal-overlay:not([hidden]) .modal {
+      transform: scale(1);
+    }
+
+    .modal h2 {
+      font-size: 1.35rem;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .modal p {
+      color: var(--text-secondary);
+      text-align: center;
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .modal-actions .btn {
+      flex: 1;
+    }
+
+    .modal-actions .btn-outline {
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+    }
+
+    .modal-actions .btn-outline:hover {
+      background: var(--gold);
+      color: var(--bg-dark);
+    }
+
+    @media (max-width: 480px) {
+      .main-content {
+        padding: 1.5rem 1rem;
+      }
+
+      .ballot-page .top-bar {
+        padding: 1rem 1.5rem;
+      }
+
+      .candidate-card {
+        padding: 1.25rem;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 1rem;
+      }
+
+      .candidate-header {
+        justify-content: center;
+      }
+
+      .candidate-selector {
+        order: -1;
+      }
+
+      .modal {
+        padding: 1.5rem;
+        margin: 1rem;
+      }
+
+      .modal-actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</body>
+</html>

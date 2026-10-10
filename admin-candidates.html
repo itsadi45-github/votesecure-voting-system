@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoteSecure - Manage Candidates</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="dashboard-layout">
+    <aside class="sidebar" id="sidebar" role="navigation" aria-label="Admin navigation">
+      <div class="sidebar-header">
+        <div class="logo" aria-hidden="true">
+          <i class="fa-solid fa-check-to-slot"></i>
+          <span>VoteSecure <small>Admin Panel</small></span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <span class="nav-group-label">MAIN</span>
+            <a href="admin-dashboard.html" class="nav-link"><i class="fas fa-tachometer-alt" aria-hidden="true"></i> Dashboard</a>
+          </li>
+          <li>
+            <span class="nav-group-label">ELECTIONS</span>
+            <a href="admin-elections.html" class="nav-link"><i class="fas fa-calendar-check" aria-hidden="true"></i> Manage Elections</a>
+            <a href="admin-candidates.html" class="nav-link active"><i class="fas fa-users" aria-hidden="true"></i> Candidates</a>
+            <a href="admin-results.html" class="nav-link"><i class="fas fa-chart-bar" aria-hidden="true"></i> Results</a>
+          </li>
+          <li>
+            <span class="nav-group-label">VOTERS</span>
+            <a href="admin-voters.html" class="nav-link"><i class="fas fa-user-check" aria-hidden="true"></i> Voter Management</a>
+          </li>
+          <li>
+            <span class="nav-group-label">SYSTEM</span>
+            <a href="index.html" class="nav-link"><i class="fas fa-globe" aria-hidden="true"></i> Public Site</a>
+          </li>
+        </ul>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="admin-user-box">
+          <div class="admin-avatar" aria-hidden="true">S</div>
+          <div class="admin-info">
+            <span class="admin-name">System Administrator</span>
+            <span class="admin-role">Administrator</span>
+          </div>
+        </div>
+        <button class="btn btn-logout btn-full" id="logoutBtn"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> Logout</button>
+      </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <div class="main-wrapper">
+      <header class="top-bar" role="banner">
+        <div class="top-bar-left">
+          <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="sidebar">
+            <i class="fas fa-bars" aria-hidden="true"></i>
+          </button>
+          <h1 class="page-title">Manage Candidates</h1>
+        </div>
+        <div class="top-bar-right">
+          <button class="btn btn-auto" id="addCandidateBtn"><i class="fas fa-plus" aria-hidden="true"></i><span class="btn-label"> Add Candidate</span></button>
+        </div>
+      </header>
+
+      <main class="main-content" role="main">
+        <div class="filter-bar" aria-label="Filter candidates by election">
+          <span class="filter-label">Filter by election:</span>
+          <div class="filter-buttons" id="filterButtons"></div>
+        </div>
+
+        <section class="card-section" aria-labelledby="candidatesHeading">
+          <div class="card-section-header">
+            <h2 class="section-title" id="candidatesHeading"><i class="fas fa-users" aria-hidden="true"></i> Candidates</h2>
+            <span class="candidate-count" id="candidateCount">0 total</span>
+          </div>
+          <div class="table-container">
+            <table class="data-table" id="candidatesTable">
+              <thead>
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Party</th>
+                  <th scope="col">Election</th>
+                  <th scope="col">Votes Received</th>
+                  <th scope="col">Bio</th>
+                  <th scope="col">Action</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <p class="empty-message" id="candidatesEmpty" hidden>No candidates found.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="addCandidateModal" role="dialog" aria-modal="true" aria-labelledby="addCandidateModalTitle" hidden>
+    <div class="modal">
+      <h2 id="addCandidateModalTitle">Add Candidate</h2>
+      <form id="addCandidateForm" novalidate>
+        <div class="form-group">
+          <label for="candidateElection" class="required">Election</label>
+          <div class="input-wrapper">
+            <i class="fas fa-box-check" aria-hidden="true"></i>
+            <select id="candidateElection" name="electionId" required>
+              <option value="">Select an election</option>
+            </select>
+          </div>
+          <div class="error-message" aria-live="polite"></div>
+        </div>
+        <div class="form-group">
+          <label for="candidateName" class="required">Full Name</label>
+          <div class="input-wrapper">
+            <i class="fas fa-user" aria-hidden="true"></i>
+            <input type="text" id="candidateName" name="name" placeholder="Enter candidate name" required>
+          </div>
+          <div class="error-message" aria-live="polite"></div>
+        </div>
+        <div class="form-group">
+          <label for="candidateParty" class="required">Party Name</label>
+          <div class="input-wrapper">
+            <i class="fas fa-flag" aria-hidden="true"></i>
+            <input type="text" id="candidateParty" name="party" placeholder="Enter party name" required>
+          </div>
+          <div class="error-message" aria-live="polite"></div>
+        </div>
+        <div class="form-group">
+          <label for="candidateBio">Bio</label>
+          <div class="input-wrapper">
+            <i class="fas fa-align-left" aria-hidden="true"></i>
+            <textarea id="candidateBio" name="bio" placeholder="Enter candidate bio (optional)" rows="3"></textarea>
+          </div>
+          <div class="error-message" aria-live="polite"></div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" id="addCandidateCancel">Cancel</button>
+          <button type="submit" class="btn" id="addCandidateSubmit"><i class="fas fa-plus" aria-hidden="true"></i> Add Candidate</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="removeCandidateModal" role="dialog" aria-modal="true" aria-labelledby="removeCandidateModalTitle" hidden>
+    <div class="modal">
+      <h2 id="removeCandidateModalTitle">Remove Candidate</h2>
+      <p id="removeCandidateMessage"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" id="removeCandidateCancel">Cancel</button>
+        <button type="button" class="btn" id="removeCandidateConfirm" style="background: var(--error); border-color: var(--error);"><i class="fas fa-trash" aria-hidden="true"></i> Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <script src="js/data.js"></script>
+  <script>
+    const AdminCandidates = {
+      currentFilter: 'all',
+      candidateToRemove: null,
+
+      init() {
+        this.checkAuth();
+        this.initSidebar();
+        this.initLogout();
+        this.initModals();
+        this.renderFilterButtons();
+        this.renderCandidatesTable();
+      },
+
+      checkAuth() {
+        const isAdmin = sessionStorage.getItem('isAdmin');
+        if (!isAdmin) {
+          window.location.href = 'admin-login.html';
+        }
+      },
+
+      initSidebar() {
+        const hamburger = document.getElementById('hamburger');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+
+        hamburger?.addEventListener('click', () => {
+          const isOpen = sidebar.classList.toggle('open');
+          hamburger.setAttribute('aria-expanded', isOpen);
+          overlay.classList.toggle('visible');
+        });
+
+        overlay?.addEventListener('click', () => {
+          sidebar.classList.remove('open');
+          hamburger.setAttribute('aria-expanded', 'false');
+          overlay.classList.remove('visible');
+        });
+      },
+
+      initLogout() {
+        const logoutBtn = document.getElementById('logoutBtn');
+        logoutBtn?.addEventListener('click', () => {
+          sessionStorage.removeItem('adminUser');
+          sessionStorage.removeItem('isAdmin');
+          window.location.href = 'admin-login.html';
+        });
+      },
+
+      initModals() {
+        const addBtn = document.getElementById('addCandidateBtn');
+        const addModal = document.getElementById('addCandidateModal');
+        const removeModal = document.getElementById('removeCandidateModal');
+        const addForm = document.getElementById('addCandidateForm');
+        const addCancel = document.getElementById('addCandidateCancel');
+        const removeCancel = document.getElementById('removeCandidateCancel');
+        const removeConfirm = document.getElementById('removeCandidateConfirm');
+
+        addBtn?.addEventListener('click', () => this.openAddModal());
+        addCancel?.addEventListener('click', () => this.closeAddModal());
+        removeCancel?.addEventListener('click', () => this.closeRemoveModal());
+
+        addModal?.addEventListener('click', (e) => {
+          if (e.target === addModal) this.closeAddModal();
+        });
+        removeModal?.addEventListener('click', (e) => {
+          if (e.target === removeModal) this.closeRemoveModal();
+        });
+
+        addForm?.addEventListener('submit', (e) => this.handleAddCandidate(e));
+        removeConfirm?.addEventListener('click', () => this.confirmRemoveCandidate());
+
+        addForm?.querySelectorAll('input[required], select[required]').forEach(input => {
+          input.addEventListener('blur', () => this.validateField(input));
+          input.addEventListener('input', () => this.clearError(input));
+        });
+      },
+
+      openAddModal() {
+        const modal = document.getElementById('addCandidateModal');
+        const form = document.getElementById('addCandidateForm');
+        this.populateElectionDropdown();
+        form.reset();
+        this.clearAllErrors(form);
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => document.getElementById('candidateElection')?.focus(), 100);
+      },
+
+      closeAddModal() {
+        const modal = document.getElementById('addCandidateModal');
+        modal.hidden = true;
+        document.body.style.overflow = '';
+      },
+
+      openRemoveModal(candidate) {
+        this.candidateToRemove = candidate;
+        const modal = document.getElementById('removeCandidateModal');
+        const message = document.getElementById('removeCandidateMessage');
+        const election = DataStore.getElectionById(candidate.electionId);
+        message.textContent = `Remove ${candidate.name} from ${election?.title || 'this election'}? This cannot be undone.`;
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+      },
+
+      closeRemoveModal() {
+        const modal = document.getElementById('removeCandidateModal');
+        this.candidateToRemove = null;
+        modal.hidden = true;
+        document.body.style.overflow = '';
+      },
+
+      populateElectionDropdown() {
+        const select = document.getElementById('candidateElection');
+        const elections = DataStore.getElections();
+        select.innerHTML = '<option value="">Select an election</option>' +
+          elections.map(e => `<option value="${e.id}">${this.escapeHtml(e.title)}</option>`).join('');
+      },
+
+      getRequiredMessage(input) {
+        const messages = {
+          candidateElection: 'Please select an election',
+          candidateName: 'Full name is required',
+          candidateParty: 'Party name is required'
+        };
+        return messages[input.id] || 'This field is required';
+      },
+
+      validateField(input) {
+        if (input.required && !input.value.trim()) {
+          this.setError(input, this.getRequiredMessage(input));
+          return false;
+        }
+        this.setSuccess(input);
+        return true;
+      },
+
+      setError(input, message) {
+        input.classList.remove('success');
+        input.classList.add('error');
+        const errorEl = input.closest('.form-group')?.querySelector('.error-message');
+        if (errorEl) {
+          errorEl.textContent = message;
+          errorEl.classList.add('visible');
+        }
+      },
+
+      setSuccess(input) {
+        input.classList.remove('error');
+        input.classList.add('success');
+        const errorEl = input.closest('.form-group')?.querySelector('.error-message');
+        if (errorEl) {
+          errorEl.classList.remove('visible');
+        }
+      },
+
+      clearError(input) {
+        input.classList.remove('error');
+        const errorEl = input.closest('.form-group')?.querySelector('.error-message');
+        if (errorEl) {
+          errorEl.classList.remove('visible');
+        }
+      },
+
+      clearAllErrors(form) {
+        form.querySelectorAll('.error, .success').forEach(el => el.classList.remove('error', 'success'));
+        form.querySelectorAll('.error-message').forEach(el => el.classList.remove('visible'));
+      },
+
+      handleAddCandidate(e) {
+        e.preventDefault();
+        const form = e.target;
+        const fields = {
+          electionId: form.querySelector('#candidateElection'),
+          name: form.querySelector('#candidateName'),
+          party: form.querySelector('#candidateParty')
+        };
+        const electionId = fields.electionId.value.trim();
+        const name = fields.name.value.trim();
+        const party = fields.party.value.trim();
+        const bio = form.querySelector('#candidateBio').value.trim();
+
+        const invalidFields = [];
+        if (!electionId) {
+          this.setError(fields.electionId, 'Please select an election');
+          invalidFields.push(fields.electionId);
+        }
+        if (!name) {
+          this.setError(fields.name, 'Full name is required');
+          invalidFields.push(fields.name);
+        }
+        if (!party) {
+          this.setError(fields.party, 'Party name is required');
+          invalidFields.push(fields.party);
+        }
+
+        if (invalidFields.length) {
+          invalidFields[0].focus();
+          return;
+        }
+
+        const result = DataStore.addCandidate({ electionId, name, party, bio });
+        if (result.success) {
+          this.closeAddModal();
+          this.showToast('Candidate added successfully', 'success');
+          this.renderCandidatesTable();
+        } else {
+          this.showToast(result.message || 'Failed to add candidate', 'error');
+        }
+      },
+
+      confirmRemoveCandidate() {
+        if (!this.candidateToRemove) return;
+        const result = DataStore.removeCandidate(this.candidateToRemove.id);
+        if (result.success) {
+          this.closeRemoveModal();
+          this.showToast('Candidate removed successfully', 'success');
+          this.renderCandidatesTable();
+        } else {
+          this.showToast(result.message || 'Failed to remove candidate', 'error');
+        }
+      },
+
+      renderFilterButtons() {
+        const container = document.getElementById('filterButtons');
+        const elections = DataStore.getElections();
+        container.innerHTML = `
+          <button class="filter-btn ${this.currentFilter === 'all' ? 'active' : ''}" data-filter="all">All</button>
+          ${elections.map(e => `<button class="filter-btn ${this.currentFilter === e.id ? 'active' : ''}" data-filter="${e.id}">${this.escapeHtml(e.title)}</button>`).join('')}
+        `;
+        container.querySelectorAll('.filter-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            this.currentFilter = btn.dataset.filter;
+            this.renderFilterButtons();
+            this.renderCandidatesTable();
+          });
+        });
+      },
+
+      getFilteredCandidates() {
+        const candidates = DataStore.getData().candidates;
+        if (this.currentFilter === 'all') return candidates;
+        return candidates.filter(c => c.electionId === this.currentFilter);
+      },
+
+      renderCandidatesTable() {
+        const candidates = this.getFilteredCandidates();
+        const tbody = document.querySelector('#candidatesTable tbody');
+        const empty = document.getElementById('candidatesEmpty');
+        const countEl = document.getElementById('candidateCount');
+
+        countEl.textContent = `${candidates.length} total`;
+
+        if (!candidates.length) {
+          tbody.innerHTML = '';
+          empty.hidden = false;
+          return;
+        }
+
+        empty.hidden = true;
+        tbody.innerHTML = candidates.map(candidate => {
+          const election = DataStore.getElectionById(candidate.electionId);
+          const initial = candidate.name.charAt(0).toUpperCase();
+          const shortBio = candidate.bio.length > 60 ? candidate.bio.substring(0, 60) + '…' : candidate.bio;
+          return `
+            <tr>
+              <td>
+                <div class="candidate-name-cell">
+                  <span class="candidate-avatar-sm" aria-hidden="true">${initial}</span>
+                  <span>${this.escapeHtml(candidate.name)}</span>
+                </div>
+              </td>
+              <td><span class="badge party-badge">${this.escapeHtml(candidate.party)}</span></td>
+              <td>${this.escapeHtml(election?.title || 'Unknown')}</td>
+              <td class="votes-cell">${candidate.votes.toLocaleString()}</td>
+              <td class="bio-cell">${this.escapeHtml(shortBio)}</td>
+              <td>
+                <button class="btn-remove" data-candidate-id="${candidate.id}" aria-label="Remove ${this.escapeHtml(candidate.name)}">
+                  <i class="fas fa-trash" aria-hidden="true"></i>
+                  <span>Remove</span>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        tbody.querySelectorAll('.btn-remove').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const candidate = candidates.find(c => c.id === btn.dataset.candidateId);
+            if (candidate) this.openRemoveModal(candidate);
+          });
+        });
+      },
+
+      showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+          toast.classList.remove('show');
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
+      },
+
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => AdminCandidates.init());
+  </script>
+<style>
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.5rem 2rem;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--card-border);
+      flex-wrap: wrap;
+    }
+
+    .filter-label {
+      font-weight: 500;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      white-space: nowrap;
+    }
+
+    .filter-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 0.5rem 1rem;
+      background: transparent;
+      border: 1px solid var(--card-border);
+      border-radius: 999px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .filter-btn:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .filter-btn.active {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: var(--bg-dark);
+    }
+
+    .candidate-count {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .candidate-name-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .candidate-avatar-sm {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #60a5fa);
+      color: var(--bg-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .party-badge {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .data-table td.votes-cell {
+      color: var(--gold);
+      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+    }
+
+    .bio-cell {
+      max-width: 250px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    .btn-remove {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      background: transparent;
+      border: 1px solid var(--error);
+      color: var(--error);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      transition: all var(--transition);
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .btn-remove:hover {
+      background: var(--error);
+      color: var(--text-primary);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+      transition: opacity var(--transition), visibility var(--transition);
+    }
+
+    .modal-overlay:not([hidden]) {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      width: 100%;
+      max-width: 480px;
+      margin: auto;
+      box-shadow: var(--shadow-hover);
+      transform: scale(0.95);
+      transition: transform var(--transition);
+      max-height: 90vh;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--card-border) transparent;
+    }
+
+    .modal-overlay:not([hidden]) .modal {
+      transform: scale(1);
+    }
+
+    .modal h2 {
+      font-size: 1.35rem;
+      text-align: center;
+      margin: 0 0 1.5rem;
+      padding: 0.25rem 0 0;
+    }
+
+    .modal::-webkit-scrollbar,
+    .modal-overlay::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .modal::-webkit-scrollbar-track,
+    .modal-overlay::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .modal::-webkit-scrollbar-thumb {
+      background: var(--card-border);
+      border-radius: 8px;
+    }
+
+    .modal::-webkit-scrollbar-thumb:hover {
+      background: var(--gold);
+    }
+
+    .modal-overlay::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+    }
+
+    .modal p {
+      color: var(--text-secondary);
+      text-align: center;
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .modal-actions .btn {
+      flex: 1;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+    }
+
+    .btn-outline:hover {
+      background: var(--gold);
+      color: var(--bg-dark);
+    }
+
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 1100;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .toast {
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transform: translateX(120%);
+      opacity: 0;
+      transition: transform var(--transition), opacity var(--transition);
+      box-shadow: var(--shadow);
+    }
+
+    .toast.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      background: rgba(46, 204, 113, 0.9);
+      color: var(--bg-dark);
+      border: 1px solid var(--success);
+    }
+
+    .toast.error {
+      background: rgba(231, 76, 60, 0.9);
+      color: var(--text-primary);
+      border: 1px solid var(--error);
+    }
+
+    @media (max-width: 768px) {
+      #candidatesTable {
+        min-width: 820px;
+      }
+
+      #candidatesTable th:first-child,
+      #candidatesTable td:first-child {
+        min-width: 200px;
+        white-space: normal;
+      }
+
+      #candidatesTable th:nth-child(2),
+      #candidatesTable td:nth-child(2),
+      #candidatesTable th:nth-child(3),
+      #candidatesTable td:nth-child(3),
+      #candidatesTable th:nth-child(4),
+      #candidatesTable td:nth-child(4),
+      #candidatesTable th:last-child,
+      #candidatesTable td:last-child {
+        white-space: nowrap;
+      }
+
+      .filter-bar {
+        padding: 1rem 1.5rem;
+      }
+
+      .filter-label {
+        width: 100%;
+        margin-bottom: 0.5rem;
+      }
+
+      .candidate-name-cell {
+        gap: 0.5rem;
+      }
+
+      .candidate-avatar-sm {
+        width: 32px;
+        height: 32px;
+        font-size: 0.875rem;
+      }
+
+      .bio-cell {
+        max-width: 150px;
+      }
+
+      .btn-remove {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+      }
+
+      .modal {
+        padding: 1.5rem;
+        max-height: 92vh;
+      }
+
+      .modal-actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</body>
+</html>

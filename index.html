@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoteSecure - Voter Login</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="page">
+    <div class="card" role="main">
+      <div class="logo" aria-hidden="true">
+        <i class="fa-solid fa-check-to-slot"></i>
+        <span>VoteSecure</span>
+      </div>
+
+      <h1 class="card-title">Voter Login</h1>
+      <p class="card-subtitle">Sign in to access your voting portal</p>
+
+      <form id="loginForm" novalidate autocomplete="off">
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <div class="input-wrapper">
+            <i class="fas fa-envelope" aria-hidden="true"></i>
+            <input type="email" id="email" name="email" placeholder="Enter your email" autocomplete="off" required>
+          </div>
+          <div class="error-message" aria-live="polite"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="input-wrapper">
+            <i class="fas fa-lock" aria-hidden="true"></i>
+            <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="new-password" required>
+            <button type="button" class="toggle-password" aria-label="Toggle password visibility">
+              <i class="fas fa-eye" aria-hidden="true"></i>
+            </button>
+          </div>
+          <div class="error-message" aria-live="polite"></div>
+        </div>
+
+        <button type="submit" class="btn">Login</button>
+      </form>
+
+      <p class="footer-links">
+        Don't have an account? <a href="register.html">Register here</a>
+      </p>
+
+      <div class="divider">or</div>
+
+      <p class="footer-links">
+        <a href="admin-login.html"><i class="fas fa-user-shield" aria-hidden="true"></i> Admin Panel Login</a>
+      </p>
+    </div>
+  </main>
+  <script src="js/app.js"></script>
+</body>
+</html>
